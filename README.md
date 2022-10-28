@@ -1,6 +1,5 @@
 # java-explore-with-me
 
-<<<<<<< HEAD
 
 ## Это репозиторий проекта "Explore-With-Me"
 
@@ -12,8 +11,3 @@
 
 Приложение написано на Java.
 
-```
------- for ExploreWithMe project.
-=======
-Template repository for ExploreWithMe project.
->>>>>>> 9ea384c37b7b1d56a99a6d14b15f689cd81e78a2
