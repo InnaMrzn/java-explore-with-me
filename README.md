@@ -11,5 +11,5 @@
 
 Приложение написано на Java.
 
-(https://github.com/InnaMrzn/java-explore-with-me/pull/1 "Ссылка на Pull Request")
+[Ссылка на Pull Request](https://github.com/InnaMrzn/java-explore-with-me/pull/1)
 
