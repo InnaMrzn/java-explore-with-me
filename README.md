@@ -1,7 +1,9 @@
 # java-explore-with-me
+
 <<<<<<< HEAD
 
 ## Это репозиторий проекта "Explore-With-Me"
+
 #### Диплотмый проект
 
 Для работы приложения требуется **Docker Container**.

@@ -126,8 +126,7 @@ public class EventServiceImpl implements EventService {
         return fullDto;
     }
 
-    public List<EventFullDto> findFilteredEventsForAdmin
-            (List<Long> users, List<String> states, List<Long> categories,
+    public List<EventFullDto> findFilteredEventsForAdmin(List<Long> users, List<String> states, List<Long> categories,
              String rangeStart, String rangeEnd, int from, int size) {
         Pageable sortedPaging = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
         Session session = entityManager.unwrap(Session.class);
