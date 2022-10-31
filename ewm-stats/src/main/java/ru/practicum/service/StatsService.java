@@ -38,7 +38,7 @@ public class StatsService {
         CriteriaQuery<EndpointHit> cr = cb.createQuery(EndpointHit.class);
         Root<EndpointHit> c = cr.from(EndpointHit.class);
         cr.groupBy(c.get("app"), c.get("uri"));
-        cr.where(
+        cr.select(c).where(
                 cb.greaterThan(c.get("timestamp"), startTime),
                 cb.lessThan(c.get("timestamp"), endTime)
         );

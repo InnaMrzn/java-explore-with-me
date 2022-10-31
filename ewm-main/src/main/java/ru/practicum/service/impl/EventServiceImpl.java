@@ -1,5 +1,6 @@
 package ru.practicum.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.Filter;
@@ -11,15 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.EventState;
 import ru.practicum.RequestStatus;
+import ru.practicum.client.StatsClient;
 import ru.practicum.dto.*;
 import ru.practicum.dto.mappers.EventMapper;
 import ru.practicum.dto.mappers.RequestMapper;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.WrongActionException;
-import ru.practicum.model.Category;
-import ru.practicum.model.Event;
-import ru.practicum.model.ParticipationRequest;
-import ru.practicum.model.User;
+import ru.practicum.model.*;
 import ru.practicum.repo.CategoryRepository;
 import ru.practicum.repo.EventRepository;
 import ru.practicum.repo.ParticipationRequestRepository;
@@ -29,7 +28,7 @@ import ru.practicum.service.EventService;
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,6 +40,7 @@ public class EventServiceImpl implements EventService {
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final StatsClient statsClient;
     private static final DateTimeFormatter dateFormat
             = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -49,11 +49,13 @@ public class EventServiceImpl implements EventService {
 
     @Autowired
     public EventServiceImpl(EventRepository eventRepository, ParticipationRequestRepository requestRepository,
-                            UserRepository userRepository, CategoryRepository categoryRepository) {
+                            UserRepository userRepository, CategoryRepository categoryRepository,
+                            StatsClient statsClient) {
         this.eventRepository = eventRepository;
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
+        this.statsClient = statsClient;
     }
 
     @Override
@@ -127,7 +129,7 @@ public class EventServiceImpl implements EventService {
     }
 
     public List<EventFullDto> findFilteredEventsForAdmin(List<Long> users, List<String> states, List<Long> categories,
-             String rangeStart, String rangeEnd, int from, int size) {
+                                                         String rangeStart, String rangeEnd, int from, int size) {
         Pageable sortedPaging = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
         Session session = entityManager.unwrap(Session.class);
         if (users != null) {
@@ -158,8 +160,15 @@ public class EventServiceImpl implements EventService {
         session.disableFilter("rangeStartFilter");
         session.disableFilter("rangeEndFilter");
 
-        return events.stream().map(EventMapper::toEventFullDto).collect(Collectors.toList());
+        List<EventFullDto> eventDtos = events.stream().map(EventMapper::toEventFullDto).collect(Collectors.toList());
+        Map<Long, Long> viewMap = getViews(new ArrayList(eventDtos));
+        for (EventDto nextDto : eventDtos) {
+            if ((viewMap.get(nextDto.getId()) != null)) {
+                nextDto.setViews(viewMap.get(nextDto.getId()));
+            }
+        }
 
+        return eventDtos;
     }
 
     @Override
@@ -168,9 +177,7 @@ public class EventServiceImpl implements EventService {
                                                            String rangeStart, String rangeEnd, String onlyAvailable,
                                                            String sort, int from, int size) {
         String sortProp = "eventDate";
-        if (sort.equalsIgnoreCase("VIEWS")) {
-            sortProp = "views";
-        }
+
         Pageable sortedPaging = PageRequest.of(from / size, size, Sort.by(sortProp).descending());
         boolean dateRangeExists = false;
         Session session = entityManager.unwrap(Session.class);
@@ -212,11 +219,16 @@ public class EventServiceImpl implements EventService {
         session.disableFilter("rangeEndFilter");
         session.disableFilter("paidFilter");
         session.disableFilter("stateFilter");
-        for (Event event : filteredEvents) {
-            event.setViews(event.getViews() + 1);
-        }
         eventRepository.saveAll(events);
-        return filteredEvents.stream().map(EventMapper::toEventShortDto).collect(Collectors.toList());
+        List<EventShortDto> eventDtos = filteredEvents.stream().map(EventMapper::toEventShortDto).collect(Collectors.toList());
+        Map<Long, Long> viewMap = getViews(new ArrayList(eventDtos));
+        for (EventDto nextDto : eventDtos) {
+            if ((viewMap.get(nextDto.getId()) != null)) {
+                nextDto.setViews(viewMap.get(nextDto.getId()));
+            }
+        }
+
+        return eventDtos;
     }
 
     @Override
@@ -229,7 +241,10 @@ public class EventServiceImpl implements EventService {
                     " имеет статус " + event.getState().name());
         }
         event.setState(EventState.CANCELED);
-        return EventMapper.toEventFullDto(eventRepository.save(event));
+
+        EventFullDto dto = EventMapper.toEventFullDto(eventRepository.save(event));
+        dto.setViews(getViewsSingle(dto));
+        return dto;
     }
 
     @Override
@@ -238,7 +253,9 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiator_Id(eventId, userId).orElseThrow(() ->
                 new NotFoundException("Событие с id=" + eventId + " и userId=" + userId + " не найдено."));
 
-        return EventMapper.toEventFullDto(event);
+        EventFullDto dto = EventMapper.toEventFullDto(event);
+        dto.setViews(getViewsSingle(dto));
+        return dto;
     }
 
     @Override
@@ -256,7 +273,9 @@ public class EventServiceImpl implements EventService {
         }
         pendingEvent.setState(EventState.PUBLISHED);
         pendingEvent.setPublishedOn(LocalDateTime.now());
-        return EventMapper.toEventFullDto(eventRepository.save(pendingEvent));
+        EventFullDto dto = EventMapper.toEventFullDto(eventRepository.save(pendingEvent));
+        dto.setViews(getViewsSingle(dto));
+        return dto;
     }
 
     @Override
@@ -268,15 +287,24 @@ public class EventServiceImpl implements EventService {
             return EventMapper.toEventFullDto(pendingEvent);
         }
         pendingEvent.setState(EventState.CANCELED);
-        return EventMapper.toEventFullDto(eventRepository.save(pendingEvent));
+        EventFullDto dto = EventMapper.toEventFullDto(eventRepository.save(pendingEvent));
+        dto.setViews(getViewsSingle(dto));
+        return dto;
     }
 
     @Override
     public List<EventShortDto> findByInitiator(Long userId, Integer from, Integer size) {
         Pageable sortedPaging = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
-        return eventRepository.findAllByInitiator_Id(userId, sortedPaging)
+        List<EventShortDto> eventDtos = eventRepository.findAllByInitiator_Id(userId, sortedPaging)
                 .stream().map(EventMapper::toEventShortDto).collect(Collectors.toList());
+        Map<Long, Long> viewMap = getViews(new ArrayList(eventDtos));
+        for (EventDto nextDto : eventDtos) {
+            if ((viewMap.get(nextDto.getId()) != null)) {
+                nextDto.setViews(viewMap.get(nextDto.getId()));
+            }
+        }
 
+        return eventDtos;
     }
 
     @Override
@@ -351,9 +379,41 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId).orElseThrow(() ->
                 new NotFoundException("Событие с id=" + eventId + " не найдено."));
         session.disableFilter("stateFilter");
-        event.setViews(event.getViews() + 1);
         eventRepository.save(event);
-        return EventMapper.toEventFullDto(event);
+        EventFullDto dto = EventMapper.toEventFullDto(event);
+        dto.setViews(getViewsSingle(dto));
+        return dto;
+    }
+
+    private Map<Long, Long> getViews(List<EventDto> events) {
+        List ids = events.stream().map(e -> e.getId()).collect(Collectors.toList());
+        if (ids.size() == 0) {
+            ids = null;
+        }
+        List<ViewStats> stats = statsClient.getStats("1990-01-01 10:00:00",
+                "2030-01-01 10:00:00", ids, false);
+        Map<Long, Long> eventHits = new HashMap();
+        for (ViewStats view : stats) {
+            String endPoint = view.getUri();
+            String eventId = endPoint.substring(endPoint.lastIndexOf("/") + 1);
+            if (eventId.length() > 0) {
+                eventHits.put(Long.parseLong(eventId), view.getHits());
+            }
+        }
+        return eventHits;
+    }
+
+    private long getViewsSingle(EventDto event) {
+        List ids = new ArrayList();
+        ids.add(event.getId());
+        List<ViewStats> stats = (List<ViewStats>) statsClient.getStats("1990-01-01 10:00:00",
+                "2030-01-01 10:00:00", ids, false);
+        log.debug("***SIZE OF VIEWS from getViewsSingle =" + stats.size());
+        if (stats.size() == 0) {
+            return 0;
+        } else {
+            return stats.get(0).getHits();
+        }
 
     }
 

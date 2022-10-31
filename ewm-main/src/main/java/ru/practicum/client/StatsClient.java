@@ -1,21 +1,29 @@
 package ru.practicum.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.dto.EndpointHitDto;
+import ru.practicum.model.ViewStats;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class StatsClient extends BaseClient {
     private static final String API_PREFIX = "";
     private static final DateTimeFormatter dateFormat
@@ -40,13 +48,24 @@ public class StatsClient extends BaseClient {
         post("/hit", hitDto);
     }
 
-    public ResponseEntity<Object> getStats(String start, String end, List<Long> uris, Boolean unique) {
-        Map<String, Object> parameters = Map.of(
-                "start", start,
-                "end", end,
-                "uris", uris,
-                "unique", unique
-        );
-        return get("/stats", parameters);
+    public List<ViewStats> getStats(String start, String end, List<Long> ids, Boolean unique) {
+
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<String, String>();
+        parameters.add("start", start);
+        parameters.add("end", end);
+        parameters.add("unique", unique.toString());
+
+        if (ids != null) {
+            for (Long id : ids) {
+                parameters.add("uris", "/events/" + id);
+            }
+        }
+
+        log.info("GET /stats?");
+        for (String key : parameters.keySet()) {
+            log.info(key + ": " + parameters.get(key));
+        }
+        List<ViewStats> result = get("/stats", parameters).getBody();
+        return (result != null ? result : new ArrayList<ViewStats>());
     }
 }

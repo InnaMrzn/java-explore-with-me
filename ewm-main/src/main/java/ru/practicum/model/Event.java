@@ -89,8 +89,6 @@ public class Event {
             mappedBy = "events")
     @JsonIgnore
     private final List<Compilation> compilations = new ArrayList<>();
-    @Column(name = "views")
-    private long views;
 
     @Formula("(select count(r.id) from requests r " +
             "where r.event_id =id and upper(r.request_status)='CONFIRMED') ")

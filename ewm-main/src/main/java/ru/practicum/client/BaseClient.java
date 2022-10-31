@@ -1,9 +1,13 @@
 package ru.practicum.client;
 
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+import ru.practicum.model.ViewStats;
 
 import java.util.List;
 import java.util.Map;
@@ -16,32 +20,40 @@ public class BaseClient {
     }
 
 
-    protected ResponseEntity<Object> get(String path, @Nullable Map<String, Object> parameters) {
+    protected ResponseEntity<List<ViewStats>> get(String path, @Nullable MultiValueMap<String, String> parameters) {
         return makeAndSendRequest(HttpMethod.GET, path, parameters, null);
     }
 
-    protected <T> ResponseEntity<Object> post(String path, T body) {
+    protected <T> ResponseEntity<List<ViewStats>> post(String path, T body) {
         return post(path, null, body);
     }
 
 
-    protected <T> ResponseEntity<Object> post(String path, @Nullable Map<String, Object> parameters, T body) {
+    protected <T> ResponseEntity<List<ViewStats>> post(String path, @Nullable MultiValueMap<String, String> parameters,
+                                                       T body) {
         return makeAndSendRequest(HttpMethod.POST, path, parameters, body);
     }
 
-    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method, String path,
-                                                          @Nullable Map<String, Object> parameters, @Nullable T body) {
+    private <T> ResponseEntity<List<ViewStats>> makeAndSendRequest(HttpMethod method, String path,
+                                                                   @Nullable MultiValueMap<String, String> parameters, @Nullable T body) {
         HttpEntity<T> requestEntity = new HttpEntity<>(body, defaultHeaders());
 
-        ResponseEntity<Object> ewmServerResponse;
+        ResponseEntity<List<ViewStats>> ewmServerResponse;
+        ParameterizedTypeReference<List<ViewStats>> parameterizedTypeReference = new ParameterizedTypeReference<>() {
+        };
+
         try {
             if (parameters != null) {
-                ewmServerResponse = rest.exchange(path, method, requestEntity, Object.class, parameters);
+
+                UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromPath(path);
+                uriBuilder.queryParams(parameters);
+                ewmServerResponse = rest.exchange(uriBuilder.toUriString(), method, requestEntity,
+                        parameterizedTypeReference);
             } else {
-                ewmServerResponse = rest.exchange(path, method, requestEntity, Object.class);
+                ewmServerResponse = rest.exchange(path, method, requestEntity, parameterizedTypeReference);
             }
         } catch (HttpStatusCodeException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         return prepareGatewayResponse(ewmServerResponse);
     }
@@ -53,7 +65,7 @@ public class BaseClient {
         return headers;
     }
 
-    private static ResponseEntity<Object> prepareGatewayResponse(ResponseEntity<Object> response) {
+    private static <V> ResponseEntity<V> prepareGatewayResponse(ResponseEntity<V> response) {
         if (response.getStatusCode().is2xxSuccessful()) {
             return response;
         }

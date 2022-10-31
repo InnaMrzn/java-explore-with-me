@@ -2,18 +2,10 @@ package ru.practicum.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
-public class EventShortDto {
-    private final String annotation;
-    private CategoryDto category;
-    private Long confirmedRequests;
-    private final String eventDate;
-    private final Long id;
-    private UserShortDto initiator;
-    private final String paid;
-    private final String title;
-    private Long views;
+@SuperBuilder
+public class EventShortDto extends EventDto {
 
 }

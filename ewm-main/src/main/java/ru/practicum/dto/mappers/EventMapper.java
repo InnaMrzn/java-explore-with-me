@@ -70,7 +70,6 @@ public class EventMapper {
                 .eventDate(dateFormat.format(event.getEventDate()))
                 .confirmedRequests(event.getApprovedRequestsCount())
                 .title(event.getTitle())
-                .views(event.getViews())
                 .confirmedRequests(event.getApprovedRequestsCount()).build();
 
     }
@@ -90,7 +89,6 @@ public class EventMapper {
                 .initiator(UserMapper.toShortDto(event.getInitiator()))
                 .location(event.getLocation())
                 .createdOn(dateFormat.format(event.getCreatedOn()))
-                .views(event.getViews())
                 .confirmedRequests(event.getApprovedRequestsCount()).build();
         if (event.getPublishedOn() != null) {
             fullDto.setPublishedOn(dateFormat.format(event.getPublishedOn()));
