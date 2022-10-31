@@ -226,8 +226,12 @@ public class EventServiceImpl implements EventService {
                 nextDto.setViews(viewMap.get(nextDto.getId()));
             }
         }
-
-        return eventDtos;
+        if (sort.equalsIgnoreCase("VIEWS")) {
+            return eventDtos.stream().sorted(Comparator.comparingLong(EventShortDto::getViews).reversed())
+                    .collect(Collectors.toList());
+        } else {
+            return eventDtos;
+        }
     }
 
     @Override
