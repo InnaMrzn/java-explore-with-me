@@ -12,27 +12,27 @@ DROP
     TABLE IF EXISTS USERS;
 CREATE TABLE IF NOT EXISTS USERS (
                                      ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                     NAME VARCHAR NOT NULL, EMAIL VARCHAR NOT NULL UNIQUE
+                                     NAME VARCHAR (200) NOT NULL, EMAIL VARCHAR (320) NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS CATEGORIES (
                                           ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                          NAME VARCHAR NOT NULL UNIQUE
+                                          NAME VARCHAR (100) NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS COMPILATIONS (
                                             ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                            TITLE VARCHAR NOT NULL, PINNED BOOLEAN NOT NULL
+                                            TITLE VARCHAR (100) NOT NULL, PINNED BOOLEAN NOT NULL
 );
 CREATE TABLE IF NOT EXISTS EVENTS (
                                       ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                      TITLE VARCHAR NOT NULL,
-                                      ANNOTATION VARCHAR NOT NULL,
-                                      DESCRIPTION VARCHAR NOT NULL,
+                                      TITLE VARCHAR (100) NOT NULL,
+                                      ANNOTATION VARCHAR (100) NOT NULL,
+                                      DESCRIPTION VARCHAR (2000) NOT NULL,
                                       CATEGORY_ID BIGINT NOT NULL,
                                       CREATED_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                                       EVENT_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                                       PUBLISHED_DATE TIMESTAMP WITHOUT TIME ZONE,
                                       INITIATOR_ID BIGINT NOT NULL,
-                                      EVENT_STATE VARCHAR NOT NULL,
+                                      EVENT_STATE VARCHAR NOT NULL DEFAULT 'PENDING',
                                       PAID BOOLEAN NOT NULL,
                                       REQUEST_MODERATION BOOLEAN NOT NULL,
                                       PARTS_LIMIT INTEGER NOT NULL,
