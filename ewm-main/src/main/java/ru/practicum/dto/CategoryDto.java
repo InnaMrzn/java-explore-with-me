@@ -9,6 +9,6 @@ import javax.validation.constraints.Size;
 public class CategoryDto {
     Long id;
     @NotEmpty
-    @Size(min=1, max=50, message = "название категории может быть длиной от 1 до 50 символов")
+    @Size(min = 1, max = 50, message = "название категории может быть длиной от 1 до 50 символов")
     String name;
 }

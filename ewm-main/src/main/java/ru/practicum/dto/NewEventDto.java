@@ -16,7 +16,7 @@ public class NewEventDto {
     @NotNull(message = "категория не может быть пустой")
     Long category;
     @NotEmpty(message = "описание не может быть пустым")
-    @Size(min = 20, max = 7000,  message="размер описания должен быть от 20 до 7000 знаков")
+    @Size(min = 20, max = 7000, message = "размер описания должен быть от 20 до 7000 знаков")
     String description;
     @NotEmpty(message = "дата не может быть пустой")
     String eventDate;
@@ -27,7 +27,7 @@ public class NewEventDto {
     int participantLimit;
     boolean requestModeration;
     @NotEmpty(message = "заголовок не может быть пустым")
-    @Size(min = 3, max = 120, message="размер заголовка должен быть от 3 до 120 знаков")
+    @Size(min = 3, max = 120, message = "размер заголовка должен быть от 3 до 120 знаков")
     String title;
 
 }
