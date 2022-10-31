@@ -16,17 +16,17 @@ CREATE TABLE IF NOT EXISTS USERS (
 );
 CREATE TABLE IF NOT EXISTS CATEGORIES (
                                           ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                          NAME VARCHAR (100) NOT NULL UNIQUE
+                                          NAME VARCHAR (1000) NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS COMPILATIONS (
                                             ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                            TITLE VARCHAR (100) NOT NULL, PINNED BOOLEAN NOT NULL
+                                            TITLE VARCHAR (1000) NOT NULL, PINNED BOOLEAN NOT NULL
 );
 CREATE TABLE IF NOT EXISTS EVENTS (
                                       ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                      TITLE VARCHAR (100) NOT NULL,
-                                      ANNOTATION VARCHAR (100) NOT NULL,
-                                      DESCRIPTION VARCHAR (2000) NOT NULL,
+                                      TITLE VARCHAR (1000) NOT NULL,
+                                      ANNOTATION VARCHAR (2000) NOT NULL,
+                                      DESCRIPTION VARCHAR (7000) NOT NULL,
                                       CATEGORY_ID BIGINT NOT NULL,
                                       CREATED_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                                       EVENT_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
