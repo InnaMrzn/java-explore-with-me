@@ -1,64 +1,131 @@
-DROP
-    TABLE IF EXISTS REQUESTS;
-DROP
-    TABLE IF EXISTS EVENTS_COMPILATIONS;
-DROP
-    TABLE IF EXISTS EVENTS;
-DROP
-    TABLE IF EXISTS COMPILATIONS;
-DROP
-    TABLE IF EXISTS CATEGORIES;
-DROP
-    TABLE IF EXISTS USERS;
-CREATE TABLE IF NOT EXISTS USERS (
-                                     ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                     NAME VARCHAR (200) NOT NULL, EMAIL VARCHAR (320) NOT NULL UNIQUE
-);
-CREATE TABLE IF NOT EXISTS CATEGORIES (
-                                          ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                          NAME VARCHAR (1000) NOT NULL UNIQUE
-);
-CREATE TABLE IF NOT EXISTS COMPILATIONS (
-                                            ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                            TITLE VARCHAR (1000) NOT NULL, PINNED BOOLEAN NOT NULL
-);
-CREATE TABLE IF NOT EXISTS EVENTS (
-                                      ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                      TITLE VARCHAR (1000) NOT NULL,
-                                      ANNOTATION VARCHAR (2000) NOT NULL,
-                                      DESCRIPTION VARCHAR (7000) NOT NULL,
-                                      CATEGORY_ID BIGINT NOT NULL,
-                                      CREATED_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-                                      EVENT_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-                                      PUBLISHED_DATE TIMESTAMP WITHOUT TIME ZONE,
-                                      INITIATOR_ID BIGINT NOT NULL,
-                                      EVENT_STATE VARCHAR NOT NULL DEFAULT 'PENDING',
-                                      PAID BOOLEAN NOT NULL,
-                                      REQUEST_MODERATION BOOLEAN NOT NULL,
-                                      PARTS_LIMIT INTEGER NOT NULL,
-                                      LAT NUMERIC (8, 5),
-                                      LON NUMERIC (8, 5),
-                                      RADIUS INTEGER,
-    CONSTRAINT fk_events_to_users FOREIGN KEY (INITIATOR_ID) REFERENCES USERS (ID) ON DELETE RESTRICT,
-    CONSTRAINT fk_events_to_category FOREIGN KEY (CATEGORY_ID) REFERENCES CATEGORIES (ID) ON DELETE RESTRICT
-    );
-
-CREATE TABLE IF NOT EXISTS EVENTS_COMPILATIONS (
-                                                   COMPILATION_ID BIGINT NOT NULL,
-                                                   EVENT_ID BIGINT NOT NULL,
-                                                   CONSTRAINT fk_compilation FOREIGN KEY (COMPILATION_ID) REFERENCES COMPILATIONS (ID) ON DELETE CASCADE,
-    CONSTRAINT fk_event FOREIGN KEY (EVENT_ID) REFERENCES EVENTS (ID) ON DELETE CASCADE,
-    PRIMARY KEY (COMPILATION_ID, EVENT_ID)
-    );
-CREATE TABLE IF NOT EXISTS REQUESTS (
-                                        ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                                        CREATED_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-                                        EVENT_ID BIGINT NOT NULL,
-                                        REQUESTER_ID BIGINT NOT NULL,
-                                        REQUEST_STATUS VARCHAR NOT NULL,
-                                        CONSTRAINT fk_request_to_users FOREIGN KEY (REQUESTER_ID) REFERENCES USERS (ID) ON DELETE RESTRICT,
-    CONSTRAINT fk_request_to_event FOREIGN KEY (EVENT_ID) REFERENCES EVENTS (ID) ON DELETE RESTRICT
-    );
+DROP TABLE IF EXISTS REQUESTS;
 
 
+DROP TABLE IF EXISTS EVENTS_COMPILATIONS;
 
+
+DROP TABLE IF EXISTS EVENTS;
+
+
+DROP TABLE IF EXISTS COMPILATIONS;
+
+
+DROP TABLE IF EXISTS CATEGORIES;
+
+
+DROP TABLE IF EXISTS PLACES;
+
+
+DROP TABLE IF EXISTS USERS;
+
+
+CREATE TABLE IF NOT EXISTS USERS (ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                                  NAME VARCHAR (200) NOT NULL,
+    EMAIL VARCHAR (320) NOT NULL UNIQUE);
+
+
+CREATE TABLE IF NOT EXISTS CATEGORIES (ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                                       NAME VARCHAR (1000) NOT NULL UNIQUE);
+
+
+CREATE TABLE IF NOT EXISTS COMPILATIONS (ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                                         TITLE VARCHAR (1000) NOT NULL,
+    PINNED BOOLEAN NOT NULL);
+
+
+CREATE TABLE IF NOT EXISTS EVENTS
+(ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ TITLE VARCHAR (1000) NOT NULL,
+    ANNOTATION VARCHAR (2000) NOT NULL,
+    DESCRIPTION VARCHAR (7000) NOT NULL,
+    CATEGORY_ID BIGINT NOT NULL,
+    CREATED_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    EVENT_DATE TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    PUBLISHED_DATE TIMESTAMP WITHOUT TIME ZONE,
+    INITIATOR_ID BIGINT NOT NULL,
+    EVENT_STATE VARCHAR NOT NULL DEFAULT 'PENDING',
+    PAID BOOLEAN NOT NULL,
+    REQUEST_MODERATION BOOLEAN NOT NULL,
+    PARTS_LIMIT INTEGER NOT NULL,
+    LAT NUMERIC (8, 5),
+    LON NUMERIC (8, 5),
+    RADIUS INTEGER, CONSTRAINT fk_events_to_users
+    FOREIGN KEY (INITIATOR_ID) REFERENCES USERS (ID) ON DELETE RESTRICT,
+    CONSTRAINT fk_events_to_category
+    FOREIGN KEY (CATEGORY_ID) REFERENCES CATEGORIES (ID) ON DELETE RESTRICT);
+
+
+CREATE TABLE IF NOT EXISTS EVENTS_COMPILATIONS
+(COMPILATION_ID BIGINT NOT
+ NULL,
+ EVENT_ID BIGINT NOT
+ NULL,
+ CONSTRAINT fk_compilation
+ FOREIGN KEY (COMPILATION_ID) REFERENCES COMPILATIONS (ID) ON DELETE CASCADE,
+    CONSTRAINT fk_event
+    FOREIGN KEY (EVENT_ID) REFERENCES EVENTS (ID) ON DELETE CASCADE,
+    PRIMARY KEY (COMPILATION_ID,
+                 EVENT_ID));
+
+
+CREATE TABLE IF NOT EXISTS REQUESTS
+(ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ CREATED_DATE TIMESTAMP WITHOUT TIME ZONE NOT
+ NULL,
+ EVENT_ID BIGINT NOT
+ NULL,
+ REQUESTER_ID BIGINT NOT
+ NULL,
+ REQUEST_STATUS VARCHAR NOT
+ NULL,
+ CONSTRAINT fk_request_to_users
+ FOREIGN KEY (REQUESTER_ID) REFERENCES USERS (ID) ON DELETE RESTRICT,
+    CONSTRAINT fk_request_to_event
+    FOREIGN KEY (EVENT_ID) REFERENCES EVENTS (ID) ON DELETE RESTRICT);
+
+
+CREATE TABLE IF NOT EXISTS PLACES (ID BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                                   NAME VARCHAR (1000) NOT NULL,
+    LAT NUMERIC (8, 5) NOT NULL,
+    LON NUMERIC (8, 5) NOT NULL,
+    RADIUS FLOAT NOT NULL DEFAULT 0.0);
+
+
+CREATE
+OR REPLACE FUNCTION distance(lat1 float, lon1 float, lat2 float, lon2 float) RETURNS float AS '
+declare
+    dist float = 0;
+    rad_lat1 float;
+    rad_lat2 float;
+    theta float;
+    rad_theta float;
+BEGIN
+    IF lat1 = lat2 AND lon1 = lon2
+    THEN
+        RETURN dist;
+    ELSE
+        -- переводим градусы широты в радианы
+        rad_lat1 = pi() * lat1 / 180;
+        -- переводим градусы долготы в радианы
+        rad_lat2 = pi() * lat2 / 180;
+        -- находим разность долгот
+        theta = lon1 - lon2;
+        -- переводим градусы в радианы
+        rad_theta = pi() * theta / 180;
+        -- находим длину ортодромии
+        dist = sin(rad_lat1) * sin(rad_lat2) + cos(rad_lat1) * cos(rad_lat2) * cos(rad_theta);
+
+        IF dist > 1
+            THEN dist = 1;
+        END IF;
+
+        dist = acos(dist);
+        -- переводим радианы в градусы
+        dist = dist * 180 / pi();
+        -- переводим градусы в километры
+        dist = dist * 60 * 1.8524;
+
+        RETURN dist;
+    END IF;
+END;
+' LANGUAGE PLPGSQL;

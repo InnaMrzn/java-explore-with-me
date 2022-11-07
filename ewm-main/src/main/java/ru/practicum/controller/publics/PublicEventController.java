@@ -43,12 +43,13 @@ public class PublicEventController {
                                                   @RequestParam(value = "rangeEnd", required = false) String rangeEnd,
                                                   @RequestParam(value = "onlyAvailable", required = false, defaultValue = "false") String onlyAvailable,
                                                   @RestrictedStringValues(propName = "sort", values = {"EVENT_DATE", "VIEWS"})
-                                                  @RequestParam(value = "sort", required = false) String sort,
+                                                  @RequestParam(value = "sort", required = false, defaultValue = "EVENT_DATE") String sort,
+                                                  @RequestParam(value = "place", required = false) Long placeId,
                                                   @RequestParam(value = "from", required = false, defaultValue = "0") Integer from,
                                                   @RequestParam(value = "size", required = false, defaultValue = "10") Integer size, HttpServletRequest request) {
 
         List<EventShortDto> resultDtos = eventService.findFilteredEventsForPublic(text,
-                categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+                categories, paid, rangeStart, rangeEnd, Boolean.parseBoolean(onlyAvailable), sort, placeId, from, size);
         statsClient.save(request);
         return ResponseEntity.status(HttpStatus.OK).body(resultDtos);
     }

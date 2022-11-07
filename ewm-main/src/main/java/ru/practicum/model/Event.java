@@ -1,14 +1,15 @@
+
 package ru.practicum.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.Formula;
-import org.hibernate.annotations.ParamDef;
+import org.hibernate.annotations.*;
 import ru.practicum.EventState;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,27 +22,39 @@ import java.util.List;
 @Setter
 @Builder
 
-@FilterDef(name = "textFilter", parameters = @ParamDef(name = "text", type = "text"))
+@FilterDefs({
+        @FilterDef(name = "approvedRequestsFilter", defaultCondition = "(REQUEST_MODERATION = " +
+                "false OR PARTS_LIMIT = 0 OR (select count(r.id) from requests r where r.event_id =id " +
+                "and upper(r.request_status)='CONFIRMED') <= PARTS_LIMIT) "),
+        @FilterDef(name = "userFilter", parameters = @ParamDef(name = "users", type = "long")),
+        @FilterDef(name = "paidFilter", parameters = @ParamDef(name = "paid", type = "boolean")),
+        @FilterDef(name = "rangeEndFilter", parameters = @ParamDef(name = "rangeEnd", type = "LocalDateTime")),
+        @FilterDef(name = "textFilter", parameters = @ParamDef(name = "text", type = "text")),
+        @FilterDef(name = "stateFilter", parameters = @ParamDef(name = "states", type = "text")),
+        @FilterDef(name = "categoryFilter", parameters = @ParamDef(name = "categories", type = "long")),
+        @FilterDef(name = "rangeStartFilter", parameters = @ParamDef(name = "rangeStart", type = "LocalDateTime")),
+        @FilterDef(name = "distanceFilter", parameters = {
+                @ParamDef(name = "placeLat", type = "float"),
+                @ParamDef(name = "placeLon", type = "float"),
+                @ParamDef(name = "radius", type = "float")
+        })
 
-@FilterDef(name = "userFilter", parameters = @ParamDef(name = "users", type = "long"))
-@Filter(name = "userFilter", condition = "initiator_id IN (:users)")
+})
 
-@FilterDef(name = "paidFilter", parameters = @ParamDef(name = "paid", type = "boolean"))
-@Filter(name = "paidFilter", condition = "paid IN (:paid)")
+@Filters({
+        @Filter(name = "approvedRequestsFilter"),
+        @Filter(name = "userFilter", condition = "initiator_id IN (:users)"),
+        @Filter(name = "rangeEndFilter", condition = "event_date <= :rangeEnd"),
+        @Filter(name = "textFilter", condition = "(lower(description) LIKE lower(concat('%', :text,'%'))" +
+                " OR lower(annotation) LIKE lower(concat('%', :text,'%')))"),
+        @Filter(name = "paidFilter", condition = "paid = (:paid)"),
+        @Filter(name = "stateFilter", condition = "event_state IN (:states)"),
+        @Filter(name = "categoryFilter", condition = "category_id IN (:categories)"),
+        @Filter(name = "rangeStartFilter", condition = "event_date >= :rangeStart"),
+        @Filter(name = "distanceFilter", condition = "distance(lat, lon, :placeLat,:placeLon) <=:radius ")
 
-@FilterDef(name = "stateFilter", parameters = @ParamDef(name = "states", type = "text"))
-@Filter(name = "stateFilter", condition = "event_state IN (:states)")
+})
 
-@FilterDef(name = "categoryFilter", parameters = @ParamDef(name = "categories", type = "long"))
-@Filter(name = "categoryFilter", condition = "category_id IN (:categories)")
-
-@FilterDef(name = "rangeStartFilter", parameters = @ParamDef(name = "rangeStart", type = "LocalDateTime"))
-@Filter(name = "rangeStartFilter", condition = "event_date >= :rangeStart")
-
-@FilterDef(name = "rangeEndFilter", parameters = @ParamDef(name = "rangeEnd", type = "LocalDateTime"))
-@Filter(name = "rangeEndFilter", condition = "event_date <= :rangeEnd")
-@Filter(name = "textFilter", condition = "(lower(description) LIKE lower(concat('%', :text,'%'))" +
-        " OR lower(annotation) LIKE lower(concat('%', :text,'%')))")
 
 public class Event {
     @Id
@@ -92,7 +105,7 @@ public class Event {
 
     @Formula("(select count(r.id) from requests r " +
             "where r.event_id =id and upper(r.request_status)='CONFIRMED') ")
-    private long approvedRequestsCount;
+    private int approvedRequestsCount;
 
 
 }

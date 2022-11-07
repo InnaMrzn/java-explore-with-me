@@ -18,10 +18,7 @@ import ru.practicum.dto.mappers.RequestMapper;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.WrongActionException;
 import ru.practicum.model.*;
-import ru.practicum.repo.CategoryRepository;
-import ru.practicum.repo.EventRepository;
-import ru.practicum.repo.ParticipationRequestRepository;
-import ru.practicum.repo.UserRepository;
+import ru.practicum.repo.*;
 import ru.practicum.service.EventService;
 
 import javax.persistence.EntityManager;
@@ -39,6 +36,7 @@ public class EventServiceImpl implements EventService {
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final PlaceRepository placeRepository;
     private final StatsClient statsClient;
     private static final DateTimeFormatter dateFormat
             = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -49,12 +47,14 @@ public class EventServiceImpl implements EventService {
     @Autowired
     public EventServiceImpl(EventRepository eventRepository, ParticipationRequestRepository requestRepository,
                             UserRepository userRepository, CategoryRepository categoryRepository,
+                            PlaceRepository placeRepository,
                             StatsClient statsClient) {
         this.eventRepository = eventRepository;
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.statsClient = statsClient;
+        this.placeRepository = placeRepository;
     }
 
     @Override
@@ -103,11 +103,8 @@ public class EventServiceImpl implements EventService {
                     new NotFoundException("Категория с id=" + eventDto.getCategory() + " не найдена"));
             event.setCategory(category);
         }
-
         event.setState(EventState.PENDING);
-
-        EventFullDto fullDto = EventMapper.toEventFullDto(eventRepository.save(event));
-        return fullDto;
+        return EventMapper.toEventFullDto(eventRepository.save(event));
     }
 
     @Override
@@ -121,10 +118,7 @@ public class EventServiceImpl implements EventService {
                     new NotFoundException("Категория с id=" + body.getCategory() + " не найдена"));
             event.setCategory(category);
         }
-
-        EventFullDto fullDto = EventMapper.toEventFullDto(eventRepository.save(event));
-
-        return fullDto;
+        return EventMapper.toEventFullDto(eventRepository.save(event));
     }
 
     public List<EventFullDto> findFilteredEventsForAdmin(List<Long> users, List<String> states, List<Long> categories,
@@ -160,7 +154,7 @@ public class EventServiceImpl implements EventService {
         session.disableFilter("rangeEndFilter");
 
         List<EventFullDto> eventDtos = events.stream().map(EventMapper::toEventFullDto).collect(Collectors.toList());
-        Map<Long, Long> viewMap = getViews(new ArrayList(eventDtos));
+        Map<Long, Long> viewMap = getViews(new ArrayList<>(eventDtos));
         for (EventDto nextDto : eventDtos) {
             if ((viewMap.get(nextDto.getId()) != null)) {
                 nextDto.setViews(viewMap.get(nextDto.getId()));
@@ -173,10 +167,9 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public List<EventShortDto> findFilteredEventsForPublic(String text, List<Long> categories, String paid,
-                                                           String rangeStart, String rangeEnd, String onlyAvailable,
-                                                           String sort, int from, int size) {
+                                                           String rangeStart, String rangeEnd, Boolean onlyAvailable,
+                                                           String sort, Long placeId, int from, int size) {
         String sortProp = "eventDate";
-
         Pageable sortedPaging = PageRequest.of(from / size, size, Sort.by(sortProp).descending());
         boolean dateRangeExists = false;
         Session session = entityManager.unwrap(Session.class);
@@ -194,12 +187,12 @@ public class EventServiceImpl implements EventService {
             Filter paidFilter = session.enableFilter("paidFilter");
             paidFilter.setParameter("paid", Boolean.parseBoolean(paid));
         }
-        if (rangeStart != null) {
+        if (rangeStart != null && !rangeStart.equalsIgnoreCase("null")) {
             Filter rangeStartFilter = session.enableFilter("rangeStartFilter");
             rangeStartFilter.setParameter("rangeStart", LocalDateTime.parse(rangeStart, dateFormat));
             dateRangeExists = true;
         }
-        if (rangeEnd != null) {
+        if (rangeEnd != null && !rangeEnd.equalsIgnoreCase("null")) {
             Filter rangeEndFiler = session.enableFilter("rangeEndFilter");
             rangeEndFiler.setParameter("rangeEnd", LocalDateTime.parse(rangeEnd, dateFormat));
             dateRangeExists = true;
@@ -208,19 +201,30 @@ public class EventServiceImpl implements EventService {
             Filter rangeEndFiler = session.enableFilter("rangeStartFilter");
             rangeEndFiler.setParameter("rangeStart", LocalDateTime.now());
         }
+        if (onlyAvailable) {
+            session.enableFilter("approvedRequestsFilter");
+        }
+        if (placeId != null) {
+            Place place = placeRepository.findById(placeId).orElseThrow(() ->
+                    new NotFoundException("место с id=" + placeId + " не найдено."));
 
+            Filter distanceFilter = session.enableFilter("distanceFilter");
+            distanceFilter.setParameter("placeLat", place.getLocation().getLat());
+            distanceFilter.setParameter("placeLon", place.getLocation().getLon());
+            distanceFilter.setParameter("radius", place.getLocation().getRadius());
+
+        }
         List<Event> events = eventRepository.findAll(sortedPaging).getContent();
-        List<Event> filteredEvents = events.stream().filter(e -> !e.isRequestModeration() || e.getParticipantLimit() == 0
-                || e.getApprovedRequestsCount() < e.getParticipantLimit()).collect(Collectors.toList());
         session.disableFilter("categoryFilter");
         session.disableFilter("textFilter");
         session.disableFilter("rangeStartFilter");
         session.disableFilter("rangeEndFilter");
         session.disableFilter("paidFilter");
         session.disableFilter("stateFilter");
-        eventRepository.saveAll(events);
-        List<EventShortDto> eventDtos = filteredEvents.stream().map(EventMapper::toEventShortDto).collect(Collectors.toList());
-        Map<Long, Long> viewMap = getViews(new ArrayList(eventDtos));
+        session.disableFilter("approvedRequestsFilter");
+
+        List<EventShortDto> eventDtos = events.stream().map(EventMapper::toEventShortDto).collect(Collectors.toList());
+        Map<Long, Long> viewMap = getViews(new ArrayList<>(eventDtos));
         for (EventDto nextDto : eventDtos) {
             if ((viewMap.get(nextDto.getId()) != null)) {
                 nextDto.setViews(viewMap.get(nextDto.getId()));
@@ -300,7 +304,7 @@ public class EventServiceImpl implements EventService {
         Pageable sortedPaging = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
         List<EventShortDto> eventDtos = eventRepository.findAllByInitiator_Id(userId, sortedPaging)
                 .stream().map(EventMapper::toEventShortDto).collect(Collectors.toList());
-        Map<Long, Long> viewMap = getViews(new ArrayList(eventDtos));
+        Map<Long, Long> viewMap = getViews(new ArrayList<>(eventDtos));
         for (EventDto nextDto : eventDtos) {
             if ((viewMap.get(nextDto.getId()) != null)) {
                 nextDto.setViews(viewMap.get(nextDto.getId()));
@@ -389,29 +393,27 @@ public class EventServiceImpl implements EventService {
     }
 
     private Map<Long, Long> getViews(List<EventDto> events) {
-        List ids = events.stream().map(e -> e.getId()).collect(Collectors.toList());
-        if (ids.size() == 0) {
-            ids = null;
-        }
-        List<ViewStats> stats = statsClient.getStats("1990-01-01 10:00:00",
-                "2030-01-01 10:00:00", ids, false);
-        Map<Long, Long> eventHits = new HashMap();
-        for (ViewStats view : stats) {
-            String endPoint = view.getUri();
-            String eventId = endPoint.substring(endPoint.lastIndexOf("/") + 1);
-            if (eventId.length() > 0) {
-                eventHits.put(Long.parseLong(eventId), view.getHits());
+        Map<Long, Long> eventHits = new HashMap<>();
+        List<Long> ids = events.stream().map(e -> e.getId()).collect(Collectors.toList());
+        if (ids.size() > 0) {
+            List<ViewStats> stats = statsClient.getStats("1990-01-01 10:00:00",
+                    "2030-01-01 10:00:00", ids, false);
+            for (ViewStats view : stats) {
+                String endPoint = view.getUri();
+                String eventId = endPoint.substring(endPoint.lastIndexOf("/") + 1);
+                if (eventId.length() > 0) {
+                    eventHits.put(Long.parseLong(eventId), view.getHits());
+                }
             }
         }
         return eventHits;
     }
 
     private long getViewsSingle(EventDto event) {
-        List ids = new ArrayList();
+        List<Long> ids = new ArrayList<>();
         ids.add(event.getId());
         List<ViewStats> stats = (List<ViewStats>) statsClient.getStats("1990-01-01 10:00:00",
                 "2030-01-01 10:00:00", ids, false);
-        log.debug("***SIZE OF VIEWS from getViewsSingle =" + stats.size());
         if (stats.size() == 0) {
             return 0;
         } else {

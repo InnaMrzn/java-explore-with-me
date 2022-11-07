@@ -46,7 +46,7 @@ public class StatsClient extends BaseClient {
 
     public List<ViewStats> getStats(String start, String end, List<Long> ids, Boolean unique) {
 
-        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<String, String>();
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
         parameters.add("start", start);
         parameters.add("end", end);
         parameters.add("unique", unique.toString());
@@ -62,6 +62,6 @@ public class StatsClient extends BaseClient {
             log.info(key + ": " + parameters.get(key));
         }
         List<ViewStats> result = get("/stats", parameters).getBody();
-        return (result != null ? result : new ArrayList<ViewStats>());
+        return (result != null ? result : new ArrayList<>());
     }
 }

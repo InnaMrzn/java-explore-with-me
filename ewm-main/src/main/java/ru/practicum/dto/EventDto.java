@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 public abstract class EventDto {
     private final String annotation;
     private CategoryDto category;
-    private Long confirmedRequests;
+    private Integer confirmedRequests;
     private final String eventDate;
     private final Long id;
     private UserShortDto initiator;

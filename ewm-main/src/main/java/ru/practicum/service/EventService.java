@@ -33,7 +33,7 @@ public interface EventService {
                                                   String rangeStart, String rangeEnd, int from, int size);
 
     List<EventShortDto> findFilteredEventsForPublic(String text, List<Long> categories, String paid,
-                                                    String rangeStart, String rangeEnd, String onlyAvailable,
-                                                    String sort, int from, int size);
+                                                    String rangeStart, String rangeEnd, Boolean onlyAvailable,
+                                                    String sort, Long placeId, int from, int size);
 }
 
