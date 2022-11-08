@@ -23,9 +23,11 @@ import java.util.List;
 @Builder
 
 @FilterDefs({
-        @FilterDef(name = "approvedRequestsFilter", defaultCondition = "(REQUEST_MODERATION = " +
-                "false OR PARTS_LIMIT = 0 OR (select count(r.id) from requests r where r.event_id =id " +
-                "and upper(r.request_status)='CONFIRMED') <= PARTS_LIMIT) "),
+        @FilterDef(name = "approvedRequestsFilter", defaultCondition =
+                "(REQUEST_MODERATION = false OR PARTS_LIMIT = 0 "+
+                        " OR (select count(r.id) " +
+                        " FROM requests r "+
+                        " WHERE r.event_id =id AND upper(r.request_status)='CONFIRMED') <= PARTS_LIMIT) "),
         @FilterDef(name = "userFilter", parameters = @ParamDef(name = "users", type = "long")),
         @FilterDef(name = "paidFilter", parameters = @ParamDef(name = "paid", type = "boolean")),
         @FilterDef(name = "rangeEndFilter", parameters = @ParamDef(name = "rangeEnd", type = "LocalDateTime")),
