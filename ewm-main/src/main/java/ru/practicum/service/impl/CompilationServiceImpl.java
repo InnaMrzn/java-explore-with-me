@@ -103,13 +103,13 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    public List<CompilationDto> findCompilations(String pinned, int from, int size) {
+    public List<CompilationDto> findCompilations(Boolean pinned, int from, int size) {
         int page = from / size;
         Pageable paging = PageRequest.of(page, size);
         List<Compilation> compilations;
-        if (pinned != null && !pinned.equalsIgnoreCase("null")) {
+        if (pinned != null) {
 
-            compilations = compilationRepository.findAllByPinned(Boolean.parseBoolean(pinned), paging).getContent();
+            compilations = compilationRepository.findAllByPinned(pinned, paging).getContent();
         } else {
             compilations = compilationRepository.findAll(paging).getContent();
         }

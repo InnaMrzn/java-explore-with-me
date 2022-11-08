@@ -166,7 +166,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public List<EventShortDto> findFilteredEventsForPublic(String text, List<Long> categories, String paid,
+    public List<EventShortDto> findFilteredEventsForPublic(String text, List<Long> categories, Boolean paid,
                                                            String rangeStart, String rangeEnd, Boolean onlyAvailable,
                                                            String sort, Long placeId, int from, int size) {
         String sortProp = "eventDate";
@@ -183,9 +183,9 @@ public class EventServiceImpl implements EventService {
             Filter categoryFilter = session.enableFilter("categoryFilter");
             categoryFilter.setParameterList("categories", categories);
         }
-        if (paid != null && !paid.equalsIgnoreCase("null")) {
+        if (paid != null) {
             Filter paidFilter = session.enableFilter("paidFilter");
-            paidFilter.setParameter("paid", Boolean.parseBoolean(paid));
+            paidFilter.setParameter("paid", paid);
         }
         if (rangeStart != null && !rangeStart.equalsIgnoreCase("null")) {
             Filter rangeStartFilter = session.enableFilter("rangeStartFilter");
@@ -256,7 +256,6 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto findByIdAndUser(Long userId, Long eventId) {
-        //Add check for user eligibility for event search
         Event event = eventRepository.findByIdAndInitiator_Id(eventId, userId).orElseThrow(() ->
                 new NotFoundException("Событие с id=" + eventId + " и userId=" + userId + " не найдено."));
 

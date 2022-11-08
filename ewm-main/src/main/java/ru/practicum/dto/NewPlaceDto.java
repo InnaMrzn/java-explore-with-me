@@ -7,7 +7,7 @@ import javax.validation.constraints.*;
 
 @Data
 public class NewPlaceDto {
-    @NotEmpty(message = "имя не может быть пустым")
+    @NotBlank(message = "имя не может быть пустым")
     String name;
     @NotNull(message = "локация должна быть указана")
     Location location;

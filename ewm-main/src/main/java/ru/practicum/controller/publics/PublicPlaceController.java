@@ -26,8 +26,8 @@ public class PublicPlaceController {
                     defaultValue = "0") Integer from,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
-        log.info("GET /places");
-        return ResponseEntity.status(HttpStatus.OK).body(placeService.findPlaces(from, size));
+        log.info("GET /places?from="+from+"&size="+size);
+        return ResponseEntity.status(HttpStatus.OK).body(placeService.findAllPlaces(from, size));
     }
 
     @GetMapping("/{placeId}")

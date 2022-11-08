@@ -38,10 +38,10 @@ public class PublicEventController {
     @GetMapping
     ResponseEntity<List<EventShortDto>> getEvents(@Valid @RequestParam(value = "text", required = false) String text,
                                                   @RequestParam(value = "categories", required = false) List<Long> categories,
-                                                  @RequestParam(value = "paid", required = false) String paid,
+                                                  @RequestParam(value = "paid", required = false) Boolean paid,
                                                   @RequestParam(value = "rangeStart", required = false) String rangeStart,
                                                   @RequestParam(value = "rangeEnd", required = false) String rangeEnd,
-                                                  @RequestParam(value = "onlyAvailable", required = false, defaultValue = "false") String onlyAvailable,
+                                                  @RequestParam(value = "onlyAvailable", required = false, defaultValue = "false") Boolean onlyAvailable,
                                                   @RestrictedStringValues(propName = "sort", values = {"EVENT_DATE", "VIEWS"})
                                                   @RequestParam(value = "sort", required = false, defaultValue = "EVENT_DATE") String sort,
                                                   @RequestParam(value = "place", required = false) Long placeId,
@@ -49,7 +49,7 @@ public class PublicEventController {
                                                   @RequestParam(value = "size", required = false, defaultValue = "10") Integer size, HttpServletRequest request) {
 
         List<EventShortDto> resultDtos = eventService.findFilteredEventsForPublic(text,
-                categories, paid, rangeStart, rangeEnd, Boolean.parseBoolean(onlyAvailable), sort, placeId, from, size);
+                categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, placeId, from, size);
         statsClient.save(request);
         return ResponseEntity.status(HttpStatus.OK).body(resultDtos);
     }

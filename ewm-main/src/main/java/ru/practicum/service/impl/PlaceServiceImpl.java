@@ -28,7 +28,7 @@ public class PlaceServiceImpl implements PlaceService {
     }
 
     @Override
-    public List<PlaceDto> findPlaces(int from, int size) {
+    public List<PlaceDto> findAllPlaces(int from, int size) {
         int page = from / size;
         Pageable paging = PageRequest.of(page, size);
         List<Place> places = placeRepository.findAll(paging).getContent();

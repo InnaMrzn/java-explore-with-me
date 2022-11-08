@@ -9,7 +9,7 @@ public interface PlaceService {
 
     PlaceDto create(NewPlaceDto place);
 
-    List<PlaceDto> findPlaces(int from, int size);
+    List<PlaceDto> findAllPlaces(int from, int size);
 
-    PlaceDto findPlace(Long catId);
+    PlaceDto findPlace(Long placeId);
 }
