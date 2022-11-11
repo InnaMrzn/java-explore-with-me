@@ -1,6 +1,5 @@
 # java-explore-with-me
 
-
 ## Это репозиторий проекта "Explore-With-Me"
 
 #### Диплотмый проект

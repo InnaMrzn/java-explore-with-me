@@ -9,20 +9,19 @@ services:
     depends_on:
       - stats-db
     environment:
-      - DB_URL=jdbc:postgresql://db:5432/stats
+      - DB_URL=jdbc:postgresql://stats-db:5432/stats
       - POSTGRES_USER=test
       - POSTGRES_PASSWORD=test
   ewm-db:
     image: postgres:14-alpine
     container_name: ewm-db
     ports:
-      - "5433:5433"
+      - "5555:5432"
     volumes:
       - /var/lib/postgresql/data/
 
     environment:
       - POSTGRES_DB=ewm
-      - POSTGRES_PORT=5432
       - POSTGRES_USER=test
       - POSTGRES_PASSWORD=test
 
@@ -30,13 +29,12 @@ services:
     image: postgres:14-alpine
     container_name: stats-db
     ports:
-      - "5432:5432"
+      - "5554:5432"
     volumes:
       - /var/lib/postgresql/data/
 
     environment:
       - POSTGRES_DB=stats
-      - POSTGRES_PORT=5432
       - POSTGRES_USER=test
       - POSTGRES_PASSWORD=test
 
@@ -48,7 +46,7 @@ services:
     depends_on:
       - ewm-db
     environment:
-      - DB_URL=jdbc:postgresql://db:5432/ewm
+      - DB_URL=jdbc:postgresql://ewm-db:5432/ewm
       - POSTGRES_USER=test
       - POSTGRES_PASSWORD=test
       - STATS_SERVER_URL=http://stats-server:9090

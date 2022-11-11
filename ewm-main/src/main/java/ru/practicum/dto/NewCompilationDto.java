@@ -1,8 +1,7 @@
 package ru.practicum.dto;
 
 import lombok.Data;
-
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.List;
 
@@ -10,8 +9,8 @@ import java.util.List;
 public class NewCompilationDto {
     List<Long> events;
     private final boolean pinned;
-    @NotEmpty
-    @Size(min = 1, max = 200)
+    @NotBlank
+    @Size(max = 200)
     private final String title;
 
 }

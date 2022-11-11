@@ -8,8 +8,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.service.StatsService;
-
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -28,20 +26,19 @@ public class StatsController {
             @RequestParam(name = "start", required = false, defaultValue = "2000-01-01 10:00:00") String start,
             @RequestParam(name = "end", required = false, defaultValue = "2030-01-01 10:00:00") String end,
             @RequestParam(name = "uris", required = false) List<String> uris,
-            @RequestParam(name = "unique", required = false, defaultValue = "false") String unique)
-            throws UnsupportedEncodingException {
+            @RequestParam(name = "unique", required = false, defaultValue = "false") String unique) {
         log.info("GET /stats with uri: ");
-        String decodedStart = URLDecoder.decode(start, StandardCharsets.UTF_8.toString());
-        String decodedEnd = URLDecoder.decode(end, StandardCharsets.UTF_8.toString());
+        String decodedStart = URLDecoder.decode(start, StandardCharsets.UTF_8);
+        String decodedEnd = URLDecoder.decode(end, StandardCharsets.UTF_8);
         List<String> decodedUris = null;
         if (uris != null) {
             decodedUris = new ArrayList<>();
             for (String nextUri : uris) {
-                decodedUris.add(URLDecoder.decode(nextUri, StandardCharsets.UTF_8.toString()));
+                decodedUris.add(URLDecoder.decode(nextUri, StandardCharsets.UTF_8));
             }
         }
 
-        String decodedUnique = URLDecoder.decode(unique, StandardCharsets.UTF_8.toString());
+        String decodedUnique = URLDecoder.decode(unique, StandardCharsets.UTF_8);
 
         return ResponseEntity.status(HttpStatus.OK).body(statsService.getStats(decodedStart, decodedEnd, decodedUris,
                 decodedUnique));

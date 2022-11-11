@@ -28,7 +28,7 @@ public class PublicCompilationController {
     }
 
     @GetMapping
-    ResponseEntity<List<CompilationDto>> getCompilations(@Valid @RequestParam(value = "pinned", required = false) String pinned,
+    ResponseEntity<List<CompilationDto>> getCompilations(@Valid @RequestParam(value = "pinned", required = false) Boolean pinned,
                                                          @RequestParam(value = "from", required = false, defaultValue = "0") Integer from,
                                                          @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
         log.info("GET /compilations");

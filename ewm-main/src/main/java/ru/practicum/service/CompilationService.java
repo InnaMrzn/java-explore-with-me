@@ -20,6 +20,6 @@ public interface CompilationService {
 
     void unpin(Long compId);
 
-    List<CompilationDto> findCompilations(String pinned, int from, int size);
+    List<CompilationDto> findCompilations(Boolean pinned, int from, int size);
 
 }

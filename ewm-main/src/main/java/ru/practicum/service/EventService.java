@@ -32,8 +32,8 @@ public interface EventService {
     List<EventFullDto> findFilteredEventsForAdmin(List<Long> users, List<String> states, List<Long> categories,
                                                   String rangeStart, String rangeEnd, int from, int size);
 
-    List<EventShortDto> findFilteredEventsForPublic(String text, List<Long> categories, String paid,
-                                                    String rangeStart, String rangeEnd, String onlyAvailable,
-                                                    String sort, int from, int size);
+    List<EventShortDto> findFilteredEventsForPublic(String text, List<Long> categories, Boolean paid,
+                                                    String rangeStart, String rangeEnd, Boolean onlyAvailable,
+                                                    String sort, Long placeId, int from, int size);
 }
 
