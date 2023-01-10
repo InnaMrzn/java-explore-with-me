@@ -4,6 +4,10 @@
 
 ## Project description
 Application providers basic event management functionality. Events publication, registration of participants for event and search for events.
+There are three roles: admin, user and public. Authorization and role manaement are out of scope of the project.
+*Admin* can create event categories, places of interest, new users, perform moderation of new events, create and delete event compilations
+*Users* can create events, register for events of other users, confirm or reject event participation requests from other users, 
+*Public* can search for events using different criterias such as key words, date range, location, categories. Get detailed information on specific event. Each search for list of events or for particular events stores in the statistics service and could be retrieved using API. Veiws cout for particular event is shown in the event detailed info. 
 
 ## Technologies
 * Java 11
@@ -28,13 +32,14 @@ This application configured to runs in a local Docker Containers. Docker Desktop
 
 ## Usage
 
-There are three roles: admin, registered user and public user. Authorization and role mansgement are out of scope of the project.
+There are two sample collections inside `postman` folder of this project. These collections cover all usage scenarious.:
 
-###Admin API:
+`Test_Explore_With_Me.json` and `ewm_main_service_with_places.json`
 
-###Registered user API
+* Download and open postman application https://www.postman.com/downloads/
+* Import above collections from files
+* Collection could be run at whole or each separate test can be run separately 
 
-###Public user API
 
 
 
