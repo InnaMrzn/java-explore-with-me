@@ -23,18 +23,18 @@ This application configured to runs in a local Docker Containers. Docker Desktop
 * Open command-line shell and move to application upper folder (java-explore-with-me).
 * Run `docker compose up` command
 * Check that containers `ewm-service`, `stats-service`, `stats-db` and `ewm-db` are up and running inside Docker
-! ()
+
+![](containers_running.jpg)
+
+## Usage
+
+There are three roles: admin, registered user and public user. Authorization and role mansgement are out of scope of the project.
+
+###Admin API:
+
+###Registered user API
+
+###Public user API
 
 
-
-
-
-
-Для работы приложения требуется **Docker Container**.
-
-Приложение реализует процесс публикации событий и регистрацию участников.
-
-Приложение написано на Java.
-
-[Ссылка на Pull Request](https://github.com/InnaMrzn/java-explore-with-me/pull/1)
 
